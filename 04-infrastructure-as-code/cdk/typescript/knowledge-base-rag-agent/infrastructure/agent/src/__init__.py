@@ -1,0 +1,1 @@
+# Bedrock AgentCore Template - Agent
