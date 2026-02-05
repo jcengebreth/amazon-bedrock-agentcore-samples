@@ -5,8 +5,9 @@ This module provides a tool for searching the Bedrock Knowledge Base using the
 Retrieve API for RAG (Retrieval Augmented Generation).
 """
 
-import os
 import logging
+import os
+
 import boto3
 from strands.tools import tool
 
@@ -91,10 +92,7 @@ def search_knowledge_base(query: str, max_results: int = 5) -> str:
                 source = s3_location.get('uri', 'Unknown S3 source')
             else:
                 source = f"Source type: {source_type}"
-            
-            # Extract metadata if available
-            metadata = result.get('metadata', {})
-            
+
             result_text = f"**Result {i}** (Relevance: {score:.2f})\n"
             result_text += f"Source: {source}\n"
             

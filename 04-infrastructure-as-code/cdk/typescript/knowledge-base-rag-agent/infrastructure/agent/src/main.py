@@ -7,8 +7,9 @@ It wraps the Strands agent with BedrockAgentCoreApp for deployment.
 Based on: https://strandsagents.com/latest/documentation/docs/user-guide/deploy/deploy_to_bedrock_agentcore/python/
 """
 
-import os
 import logging
+import os
+
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from src.agent import create_agent
 from src.memory import MemoryManager

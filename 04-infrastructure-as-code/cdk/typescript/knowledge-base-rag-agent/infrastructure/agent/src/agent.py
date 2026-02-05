@@ -4,8 +4,9 @@ Bedrock AgentCore Template - Agent Definition
 This module defines the Strands agent with tools for RAG-based knowledge retrieval.
 """
 
-import os
 import logging
+import os
+
 from strands import Agent
 from strands.models import BedrockModel
 from src.tools.knowledge_base import search_knowledge_base

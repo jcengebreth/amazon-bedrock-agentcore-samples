@@ -5,10 +5,11 @@ This module provides memory management using AgentCore Memory service.
 Based on: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-getting-started.html
 """
 
-import os
 import logging
+import os
 from datetime import datetime, timezone
 from typing import List, Optional
+
 import boto3
 from botocore.exceptions import ClientError
 
