@@ -4,8 +4,38 @@
  */
 
 /**
- * Sanitize user input by removing potentially dangerous HTML/script tags
- * Uses iterative approach to handle nested/obfuscated tags
+ * List of dangerous URL schemes that should be blocked
+ */
+const DANGEROUS_SCHEMES = [
+  'javascript:',
+  'vbscript:',
+  'data:',
+  'file:',
+];
+
+/**
+ * List of dangerous HTML tag names
+ */
+const DANGEROUS_TAGS = [
+  'script',
+  'iframe',
+  'object',
+  'embed',
+  'applet',
+  'meta',
+  'link',
+  'style',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'base',
+];
+
+/**
+ * Sanitize user input by removing potentially dangerous content
+ * Uses a tag-stripping approach instead of regex for better security
  * @param input - Raw user input string
  * @returns Sanitized string safe for display
  */
@@ -13,35 +43,52 @@ export const sanitizeInput = (input: string): string => {
   if (!input) return '';
 
   let sanitized = input;
+
+  // Remove dangerous URL schemes (case-insensitive, handles whitespace)
+  for (const scheme of DANGEROUS_SCHEMES) {
+    // Match scheme with optional whitespace between characters
+    const schemePattern = scheme
+      .split('')
+      .map(char => char === ':' ? '\\s*:' : `\\s*${char}`)
+      .join('');
+    const regex = new RegExp(schemePattern, 'gi');
+    
+    let previousLength: number;
+    do {
+      previousLength = sanitized.length;
+      sanitized = sanitized.replace(regex, '');
+    } while (sanitized.length !== previousLength);
+  }
+
+  // Remove dangerous HTML tags (handles spaces in closing tags like </script >)
+  for (const tag of DANGEROUS_TAGS) {
+    // Opening tags: <script, <script , <script/
+    const openTagRegex = new RegExp(`<\\s*${tag}\\b[^>]*>`, 'gi');
+    // Closing tags: </script>, </script >, < /script>
+    const closeTagRegex = new RegExp(`<\\s*/\\s*${tag}\\s*>`, 'gi');
+    
+    let previousLength: number;
+    do {
+      previousLength = sanitized.length;
+      sanitized = sanitized.replace(openTagRegex, '');
+      sanitized = sanitized.replace(closeTagRegex, '');
+    } while (sanitized.length !== previousLength);
+  }
+
+  // Remove content between script tags (in case tags weren't properly closed)
   let previousLength: number;
-
-  // Iteratively remove dangerous tags until no more are found
-  // This handles nested/obfuscated patterns like <scr<script>ipt>
   do {
     previousLength = sanitized.length;
-    sanitized = sanitized
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-      .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
-      .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
-      .replace(/<meta\b[^<]*(?:(?!<\/meta>)<[^<]*)*<\/meta>/gi, '')
-      .replace(/<link\b[^<]*(?:(?!<\/link>)<[^<]*)*<\/link>/gi, '')
-      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+    // Match script content more broadly
+    sanitized = sanitized.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '');
+    sanitized = sanitized.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
   } while (sanitized.length !== previousLength);
 
-  sanitized = sanitized.trim();
+  // Remove on* event handlers (onclick, onerror, etc.)
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
+  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
 
-  // Iteratively remove javascript: protocol
-  do {
-    previousLength = sanitized.length;
-    sanitized = sanitized.replace(/javascript:/gi, '');
-  } while (sanitized.length !== previousLength);
-
-  // Remove on* event handlers
-  sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
-
-  return sanitized;
+  return sanitized.trim();
 };
 
 /**
