@@ -218,6 +218,15 @@ This template implements comprehensive security controls following AWS best prac
 - ✅ **Audit Logging** - CloudWatch logs for all services
 - ✅ **No Hardcoded Secrets** - All credentials managed by AWS services
 
+### Known Dependency Vulnerabilities
+
+The web console has known vulnerabilities in transitive dependencies from `aws-amplify` and `@aws-amplify/ui-react`:
+
+- **fast-xml-parser** (high) - DoS vulnerability in AWS SDK v3, awaiting upstream fix
+- **lodash** (moderate) - Prototype pollution in @aws-amplify/ui
+
+These are upstream issues that will be resolved when AWS Amplify updates their dependencies. The vulnerabilities are DoS-related (not RCE) and affect server-side XML parsing which is not directly exposed in this application.
+
 For detailed security information, see [Security Documentation](docs/SECURITY.md).
 
 ## Customization

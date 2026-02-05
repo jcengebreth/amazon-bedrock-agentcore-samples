@@ -7,7 +7,9 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "postinstall": "echo 'Lambda layer dependencies installed'"
+    "postinstall": "echo 'Lambda layer dependencies installed'",
+    "build": "echo 'Lambda layer - no build required'",
+    "test": "echo 'Lambda layer - no tests'"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.0.0",
