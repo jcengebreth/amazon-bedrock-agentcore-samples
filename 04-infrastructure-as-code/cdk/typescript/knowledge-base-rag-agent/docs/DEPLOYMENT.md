@@ -28,7 +28,7 @@ npm --version
 # Check CDK CLI
 cdk --version
 
-# Check Docker (required for CDK bundling)
+# Check Docker (required for AgentCore Runtime container)
 docker --version
 
 # Check Python (for agent development)
@@ -212,6 +212,7 @@ npx cdk bootstrap aws://ACCOUNT-ID/REGION
 
 **Docker Not Running:**
 ```bash
+# Docker is required for building the AgentCore Runtime container
 # Start Docker and verify
 docker info
 ```
