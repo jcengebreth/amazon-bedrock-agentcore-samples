@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient, PutItemCommand, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { Logger } from '@aws-lambda-powertools/logger';
+import { randomBytes } from 'crypto';
 
 // Initialize logger for security audit trails
 const logger = new Logger({ serviceName: 'chat-service' });
@@ -318,7 +319,8 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       }
       currentSessionId = sessionId;
     } else {
-      currentSessionId = `${userContext.userId}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+      // Use cryptographically secure random bytes for session ID generation
+      currentSessionId = `${userContext.userId}-${Date.now()}-${randomBytes(8).toString('hex')}`;
     }
 
     logger.info('Invoking AgentCore Runtime', {

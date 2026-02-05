@@ -5,26 +5,38 @@
 
 /**
  * Sanitize user input by removing potentially dangerous HTML/script tags
+ * Uses iterative approach to handle nested/obfuscated tags
  * @param input - Raw user input string
  * @returns Sanitized string safe for display
  */
 export const sanitizeInput = (input: string): string => {
   if (!input) return '';
 
-  // Remove potentially dangerous HTML tags
-  let sanitized = input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
-    .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
-    .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
-    .replace(/<meta\b[^<]*(?:(?!<\/meta>)<[^<]*)*<\/meta>/gi, '')
-    .replace(/<link\b[^<]*(?:(?!<\/link>)<[^<]*)*<\/link>/gi, '')
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-    .trim();
+  let sanitized = input;
+  let previousLength: number;
 
-  // Remove javascript: protocol
-  sanitized = sanitized.replace(/javascript:/gi, '');
+  // Iteratively remove dangerous tags until no more are found
+  // This handles nested/obfuscated patterns like <scr<script>ipt>
+  do {
+    previousLength = sanitized.length;
+    sanitized = sanitized
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+      .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+      .replace(/<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi, '')
+      .replace(/<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>/gi, '')
+      .replace(/<meta\b[^<]*(?:(?!<\/meta>)<[^<]*)*<\/meta>/gi, '')
+      .replace(/<link\b[^<]*(?:(?!<\/link>)<[^<]*)*<\/link>/gi, '')
+      .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  } while (sanitized.length !== previousLength);
+
+  sanitized = sanitized.trim();
+
+  // Iteratively remove javascript: protocol
+  do {
+    previousLength = sanitized.length;
+    sanitized = sanitized.replace(/javascript:/gi, '');
+  } while (sanitized.length !== previousLength);
 
   // Remove on* event handlers
   sanitized = sanitized.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
