@@ -17,22 +17,22 @@ logger = logging.getLogger(__name__)
 def create_agent() -> Agent:
     """
     Create and configure the Strands agent.
-    
+
     Returns:
         Configured Strands Agent instance
     """
     # Get model configuration from environment
-    model_id = os.environ.get('MODEL_ID', 'us.anthropic.claude-sonnet-4-20250514-v1:0')
-    region = os.environ.get('AWS_REGION', 'us-east-1')
-    
+    model_id = os.environ.get("MODEL_ID", "us.anthropic.claude-sonnet-4-20250514-v1:0")
+    region = os.environ.get("AWS_REGION", "us-east-1")
+
     logger.info(f"Creating agent with model: {model_id} in region: {region}")
-    
+
     # Configure the Bedrock model
     model = BedrockModel(
         model_id=model_id,
         region_name=region,
     )
-    
+
     # Define the system prompt
     system_prompt = """You are a helpful AI assistant powered by Amazon Bedrock AgentCore.
 
@@ -60,6 +60,6 @@ Always be helpful, harmless, and honest."""
         system_prompt=system_prompt,
         tools=[search_knowledge_base],
     )
-    
+
     logger.info("Agent created successfully")
     return agent

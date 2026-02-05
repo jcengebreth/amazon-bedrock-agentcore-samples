@@ -1,14 +1,14 @@
-from aws_cdk import (
-    aws_iam as iam,
-    Stack
-)
+from aws_cdk import aws_iam as iam, Stack
 from constructs import Construct
 
+
 class AgentCoreRole(iam.Role):
-    def __init__(self, scope: Construct, construct_id: str, s3_bucket_arn: str = None, **kwargs):
+    def __init__(
+        self, scope: Construct, construct_id: str, s3_bucket_arn: str = None, **kwargs
+    ):
         region = Stack.of(scope).region
         account_id = Stack.of(scope).account
-        
+
         statements = [
             iam.PolicyStatement(
                 sid="ECRImageAccess",
@@ -16,15 +16,15 @@ class AgentCoreRole(iam.Role):
                 actions=[
                     "ecr:BatchGetImage",
                     "ecr:GetDownloadUrlForLayer",
-                    "ecr:BatchCheckLayerAvailability"
+                    "ecr:BatchCheckLayerAvailability",
                 ],
-                resources=[f"arn:aws:ecr:{region}:{account_id}:repository/*"]
+                resources=[f"arn:aws:ecr:{region}:{account_id}:repository/*"],
             ),
             iam.PolicyStatement(
-                sid="ECRTokenAccess", 
+                sid="ECRTokenAccess",
                 effect=iam.Effect.ALLOW,
                 actions=["ecr:GetAuthorizationToken"],
-                resources=["*"]
+                resources=["*"],
             ),
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
@@ -32,55 +32,55 @@ class AgentCoreRole(iam.Role):
                     "logs:DescribeLogStreams",
                     "logs:CreateLogGroup",
                     "logs:DescribeLogGroups",
-                    "logs:CreateLogStream", 
-                    "logs:PutLogEvents"
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
                 ],
-                resources=[f"arn:aws:logs:{region}:{account_id}:log-group:/aws/bedrock-agentcore/runtimes/*"]
+                resources=[
+                    f"arn:aws:logs:{region}:{account_id}:log-group:/aws/bedrock-agentcore/runtimes/*"
+                ],
             ),
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "xray:PutTraceSegments",
-                    "xray:PutTelemetryRecords", 
+                    "xray:PutTelemetryRecords",
                     "xray:GetSamplingRules",
-                    "xray:GetSamplingTargets"
+                    "xray:GetSamplingTargets",
                 ],
-                resources=["*"]
+                resources=["*"],
             ),
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=["cloudwatch:PutMetricData"],
                 resources=["*"],
                 conditions={
-                    "StringEquals": {
-                        "cloudwatch:namespace": "bedrock-agentcore"
-                    }
-                }
+                    "StringEquals": {"cloudwatch:namespace": "bedrock-agentcore"}
+                },
             ),
             iam.PolicyStatement(
                 sid="GetAgentAccessToken",
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "bedrock-agentcore:GetWorkloadAccessToken",
-                    "bedrock-agentcore:GetWorkloadAccessTokenForJWT", 
-                    "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+                    "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
+                    "bedrock-agentcore:GetWorkloadAccessTokenForUserId",
                 ],
                 resources=[
                     f"arn:aws:bedrock-agentcore:{region}:{account_id}:workload-identity-directory/default",
-                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:workload-identity-directory/default/workload-identity/*"
-                ]
+                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:workload-identity-directory/default/workload-identity/*",
+                ],
             ),
             iam.PolicyStatement(
                 sid="BedrockModelInvocation",
                 effect=iam.Effect.ALLOW,
                 actions=[
                     "bedrock:InvokeModel",
-                    "bedrock:InvokeModelWithResponseStream"
+                    "bedrock:InvokeModelWithResponseStream",
                 ],
                 resources=[
                     "arn:aws:bedrock:*::foundation-model/*",
-                    f"arn:aws:bedrock:{region}:{account_id}:*"
-                ]
+                    f"arn:aws:bedrock:{region}:{account_id}:*",
+                ],
             ),
             # Browser Tool permissions
             iam.PolicyStatement(
@@ -91,9 +91,11 @@ class AgentCoreRole(iam.Role):
                     "bedrock-agentcore:StopBrowserSession",
                     "bedrock-agentcore:InvokeBrowser",
                     "bedrock-agentcore:ListBrowserSessions",
-                    "bedrock-agentcore:TerminateBrowserSession"
+                    "bedrock-agentcore:TerminateBrowserSession",
                 ],
-                resources=[f"arn:aws:bedrock-agentcore:{region}:{account_id}:browser/*"]
+                resources=[
+                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:browser/*"
+                ],
             ),
             # Code Interpreter permissions
             iam.PolicyStatement(
@@ -103,9 +105,11 @@ class AgentCoreRole(iam.Role):
                     "bedrock-agentcore:StartCodeInterpreterSession",
                     "bedrock-agentcore:StopCodeInterpreterSession",
                     "bedrock-agentcore:InvokeCodeInterpreter",
-                    "bedrock-agentcore:ListCodeInterpreterSessions"
+                    "bedrock-agentcore:ListCodeInterpreterSessions",
                 ],
-                resources=[f"arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*"]
+                resources=[
+                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:code-interpreter/*"
+                ],
             ),
             # Memory permissions
             iam.PolicyStatement(
@@ -114,22 +118,19 @@ class AgentCoreRole(iam.Role):
                 actions=[
                     "bedrock-agentcore:ListEvents",
                     "bedrock-agentcore:PutEvents",
-                    "bedrock-agentcore:GetEvents"
+                    "bedrock-agentcore:GetEvents",
                 ],
-                resources=[f"arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*"]
+                resources=[f"arn:aws:bedrock-agentcore:{region}:{account_id}:memory/*"],
             ),
             # AWS CLI permissions for use_aws tool
             iam.PolicyStatement(
                 sid="AWSCLIAccess",
                 effect=iam.Effect.ALLOW,
-                actions=[
-                    "sts:GetCallerIdentity",
-                    "sts:AssumeRole"
-                ],
-                resources=["*"]
-            )
+                actions=["sts:GetCallerIdentity", "sts:AssumeRole"],
+                resources=["*"],
+            ),
         ]
-        
+
         # Add S3 permissions if bucket ARN provided
         if s3_bucket_arn:
             statements.append(
@@ -140,19 +141,18 @@ class AgentCoreRole(iam.Role):
                         "s3:GetObject",
                         "s3:PutObject",
                         "s3:DeleteObject",
-                        "s3:ListBucket"
+                        "s3:ListBucket",
                     ],
-                    resources=[
-                        s3_bucket_arn,
-                        f"{s3_bucket_arn}/*"
-                    ]
+                    resources=[s3_bucket_arn, f"{s3_bucket_arn}/*"],
                 )
             )
-        
-        super().__init__(scope, construct_id,
+
+        super().__init__(
+            scope,
+            construct_id,
             assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
             inline_policies={
                 "AgentCorePolicy": iam.PolicyDocument(statements=statements)
             },
-            **kwargs
+            **kwargs,
         )

@@ -9,7 +9,7 @@ print()
 # List all attributes in the module
 print("Available classes and functions:")
 for name in dir(bedrockagentcore):
-    if not name.startswith('_'):
+    if not name.startswith("_"):
         obj = getattr(bedrockagentcore, name)
         print(f"  {name}: {type(obj)}")
 
@@ -22,7 +22,7 @@ print(f"CfnRuntime: {runtime_class}")
 
 print("\nCfnRuntime attributes:")
 for name in dir(runtime_class):
-    if not name.startswith('_'):
+    if not name.startswith("_"):
         try:
             attr = getattr(runtime_class, name)
             print(f"  {name}: {type(attr)}")
@@ -31,19 +31,19 @@ for name in dir(runtime_class):
 
 print("\nLooking for Property classes:")
 for name in dir(bedrockagentcore):
-    if 'Property' in name:
+    if "Property" in name:
         obj = getattr(bedrockagentcore, name)
         print(f"  {name}: {type(obj)}")
 
 print("\nLooking for Authorizer related classes:")
 for name in dir(bedrockagentcore):
-    if 'Auth' in name.lower():
+    if "Auth" in name.lower():
         obj = getattr(bedrockagentcore, name)
         print(f"  {name}: {type(obj)}")
 
 print("\nLooking for JWT related classes:")
 for name in dir(bedrockagentcore):
-    if 'jwt' in name.lower() or 'JWT' in name:
+    if "jwt" in name.lower() or "JWT" in name:
         obj = getattr(bedrockagentcore, name)
         print(f"  {name}: {type(obj)}")
 
@@ -60,16 +60,16 @@ print("\n=== Trying to find nested property classes ===")
 try:
     # Check if there are nested classes
     for name in dir(runtime_class):
-        if not name.startswith('_') and name.endswith('Property'):
+        if not name.startswith("_") and name.endswith("Property"):
             prop_class = getattr(runtime_class, name)
             print(f"  {name}: {prop_class}")
-            
+
             # Try to get the constructor signature
             try:
                 prop_sig = inspect.signature(prop_class.__init__)
                 print(f"    Constructor: {prop_sig}")
             except Exception as e:
                 print(f"    Error getting constructor: {e}")
-                
+
 except Exception as e:
     print(f"Error exploring nested classes: {e}")

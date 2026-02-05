@@ -9,73 +9,92 @@ from aws_cdk import (
     CfnParameter,
     CfnOutput,
     Duration,
-    RemovalPolicy
+    RemovalPolicy,
 )
 from constructs import Construct
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'infra_utils'))
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "infra_utils"))
+
 
 class MultiAgentStack(Stack):
-
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         # Parameters
-        agent1_name = CfnParameter(self, "Agent1Name",
+        agent1_name = CfnParameter(
+            self,
+            "Agent1Name",
             type="String",
             default="OrchestratorAgent",
-            description="Name for the orchestrator agent runtime (agent1)"
+            description="Name for the orchestrator agent runtime (agent1)",
         )
 
-        agent2_name = CfnParameter(self, "Agent2Name",
+        agent2_name = CfnParameter(
+            self,
+            "Agent2Name",
             type="String",
             default="SpecialistAgent",
-            description="Name for the specialist agent runtime (agent2)"
+            description="Name for the specialist agent runtime (agent2)",
         )
 
-        image_tag = CfnParameter(self, "ImageTag",
+        image_tag = CfnParameter(
+            self,
+            "ImageTag",
             type="String",
             default="latest",
-            description="Tag for the Docker images"
+            description="Tag for the Docker images",
         )
 
-        network_mode = CfnParameter(self, "NetworkMode",
+        network_mode = CfnParameter(
+            self,
+            "NetworkMode",
             type="String",
             default="PUBLIC",
             description="Network mode for AgentCore resources",
-            allowed_values=["PUBLIC", "PRIVATE"]
+            allowed_values=["PUBLIC", "PRIVATE"],
         )
 
-        ecr_repository_name = CfnParameter(self, "ECRRepositoryName",
+        ecr_repository_name = CfnParameter(
+            self,
+            "ECRRepositoryName",
             type="String",
             default="multi-agent",
-            description="Base name of the ECR repositories"
+            description="Base name of the ECR repositories",
         )
 
         # ECR Repositories
-        ecr_repository_agent1 = ecr.Repository(self, "ECRRepositoryAgent1",
+        ecr_repository_agent1 = ecr.Repository(
+            self,
+            "ECRRepositoryAgent1",
             repository_name=f"{self.stack_name.lower()}-{ecr_repository_name.value_as_string}-agent1",
             image_tag_mutability=ecr.TagMutability.MUTABLE,
             removal_policy=RemovalPolicy.DESTROY,
             empty_on_delete=True,
-            image_scan_on_push=True
+            image_scan_on_push=True,
         )
 
-        ecr_repository_agent2 = ecr.Repository(self, "ECRRepositoryAgent2",
+        ecr_repository_agent2 = ecr.Repository(
+            self,
+            "ECRRepositoryAgent2",
             repository_name=f"{self.stack_name.lower()}-{ecr_repository_name.value_as_string}-agent2",
             image_tag_mutability=ecr.TagMutability.MUTABLE,
             removal_policy=RemovalPolicy.DESTROY,
             empty_on_delete=True,
-            image_scan_on_push=True
+            image_scan_on_push=True,
         )
         # IAM Roles
         # Agent1 Execution Role (with permissions to invoke Agent2)
-        agent1_execution_role = iam.Role(self, "Agent1ExecutionRole",
+        agent1_execution_role = iam.Role(
+            self,
+            "Agent1ExecutionRole",
             role_name=f"{self.stack_name}-agent1-execution-role",
             assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("BedrockAgentCoreFullAccess")
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "BedrockAgentCoreFullAccess"
+                )
             ],
             inline_policies={
                 "Agent1ExecutionPolicy": iam.PolicyDocument(
@@ -86,15 +105,15 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "ecr:BatchGetImage",
                                 "ecr:GetDownloadUrlForLayer",
-                                "ecr:BatchCheckLayerAvailability"
+                                "ecr:BatchCheckLayerAvailability",
                             ],
-                            resources=[ecr_repository_agent1.repository_arn]
+                            resources=[ecr_repository_agent1.repository_arn],
                         ),
                         iam.PolicyStatement(
                             sid="ECRTokenAccess",
                             effect=iam.Effect.ALLOW,
                             actions=["ecr:GetAuthorizationToken"],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="CloudWatchLogs",
@@ -104,9 +123,9 @@ class MultiAgentStack(Stack):
                                 "logs:CreateLogGroup",
                                 "logs:DescribeLogGroups",
                                 "logs:CreateLogStream",
-                                "logs:PutLogEvents"
+                                "logs:PutLogEvents",
                             ],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="XRayTracing",
@@ -115,9 +134,9 @@ class MultiAgentStack(Stack):
                                 "xray:PutTraceSegments",
                                 "xray:PutTelemetryRecords",
                                 "xray:GetSamplingRules",
-                                "xray:GetSamplingTargets"
+                                "xray:GetSamplingTargets",
                             ],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="CloudWatchMetrics",
@@ -128,7 +147,7 @@ class MultiAgentStack(Stack):
                                 "StringEquals": {
                                     "cloudwatch:namespace": "bedrock-agentcore"
                                 }
-                            }
+                            },
                         ),
                         iam.PolicyStatement(
                             sid="GetAgentAccessToken",
@@ -136,38 +155,44 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "bedrock-agentcore:GetWorkloadAccessToken",
                                 "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-                                "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+                                "bedrock-agentcore:GetWorkloadAccessTokenForUserId",
                             ],
                             resources=[
                                 f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default",
-                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*"
-                            ]
+                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*",
+                            ],
                         ),
                         iam.PolicyStatement(
                             sid="BedrockModelInvocation",
                             effect=iam.Effect.ALLOW,
                             actions=[
                                 "bedrock:InvokeModel",
-                                "bedrock:InvokeModelWithResponseStream"
+                                "bedrock:InvokeModelWithResponseStream",
                             ],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="InvokeAgent2Runtime",
                             effect=iam.Effect.ALLOW,
                             actions=["bedrock-agentcore:InvokeAgentRuntime"],
-                            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:runtime/*"]
-                        )
+                            resources=[
+                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:runtime/*"
+                            ],
+                        ),
                     ]
                 )
-            }
+            },
         )
         # Agent2 Execution Role (basic permissions)
-        agent2_execution_role = iam.Role(self, "Agent2ExecutionRole",
+        agent2_execution_role = iam.Role(
+            self,
+            "Agent2ExecutionRole",
             role_name=f"{self.stack_name}-agent2-execution-role",
             assumed_by=iam.ServicePrincipal("bedrock-agentcore.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("BedrockAgentCoreFullAccess")
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "BedrockAgentCoreFullAccess"
+                )
             ],
             inline_policies={
                 "Agent2ExecutionPolicy": iam.PolicyDocument(
@@ -178,15 +203,15 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "ecr:BatchGetImage",
                                 "ecr:GetDownloadUrlForLayer",
-                                "ecr:BatchCheckLayerAvailability"
+                                "ecr:BatchCheckLayerAvailability",
                             ],
-                            resources=[ecr_repository_agent2.repository_arn]
+                            resources=[ecr_repository_agent2.repository_arn],
                         ),
                         iam.PolicyStatement(
                             sid="ECRTokenAccess",
                             effect=iam.Effect.ALLOW,
                             actions=["ecr:GetAuthorizationToken"],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="CloudWatchLogs",
@@ -196,9 +221,9 @@ class MultiAgentStack(Stack):
                                 "logs:CreateLogGroup",
                                 "logs:DescribeLogGroups",
                                 "logs:CreateLogStream",
-                                "logs:PutLogEvents"
+                                "logs:PutLogEvents",
                             ],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="XRayTracing",
@@ -207,9 +232,9 @@ class MultiAgentStack(Stack):
                                 "xray:PutTraceSegments",
                                 "xray:PutTelemetryRecords",
                                 "xray:GetSamplingRules",
-                                "xray:GetSamplingTargets"
+                                "xray:GetSamplingTargets",
                             ],
-                            resources=["*"]
+                            resources=["*"],
                         ),
                         iam.PolicyStatement(
                             sid="CloudWatchMetrics",
@@ -220,7 +245,7 @@ class MultiAgentStack(Stack):
                                 "StringEquals": {
                                     "cloudwatch:namespace": "bedrock-agentcore"
                                 }
-                            }
+                            },
                         ),
                         iam.PolicyStatement(
                             sid="GetAgentAccessToken",
@@ -228,28 +253,30 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "bedrock-agentcore:GetWorkloadAccessToken",
                                 "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
-                                "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+                                "bedrock-agentcore:GetWorkloadAccessTokenForUserId",
                             ],
                             resources=[
                                 f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default",
-                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*"
-                            ]
+                                f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:workload-identity-directory/default/workload-identity/*",
+                            ],
                         ),
                         iam.PolicyStatement(
                             sid="BedrockModelInvocation",
                             effect=iam.Effect.ALLOW,
                             actions=[
                                 "bedrock:InvokeModel",
-                                "bedrock:InvokeModelWithResponseStream"
+                                "bedrock:InvokeModelWithResponseStream",
                             ],
-                            resources=["*"]
-                        )
+                            resources=["*"],
+                        ),
                     ]
                 )
-            }
+            },
         )
         # CodeBuild Service Role
-        codebuild_role = iam.Role(self, "CodeBuildRole",
+        codebuild_role = iam.Role(
+            self,
+            "CodeBuildRole",
             role_name=f"{self.stack_name}-codebuild-role",
             assumed_by=iam.ServicePrincipal("codebuild.amazonaws.com"),
             inline_policies={
@@ -261,9 +288,11 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "logs:CreateLogGroup",
                                 "logs:CreateLogStream",
-                                "logs:PutLogEvents"
+                                "logs:PutLogEvents",
                             ],
-                            resources=[f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/codebuild/*"]
+                            resources=[
+                                f"arn:aws:logs:{self.region}:{self.account}:log-group:/aws/codebuild/*"
+                            ],
                         ),
                         iam.PolicyStatement(
                             sid="ECRAccess",
@@ -276,25 +305,29 @@ class MultiAgentStack(Stack):
                                 "ecr:PutImage",
                                 "ecr:InitiateLayerUpload",
                                 "ecr:UploadLayerPart",
-                                "ecr:CompleteLayerUpload"
+                                "ecr:CompleteLayerUpload",
                             ],
                             resources=[
                                 ecr_repository_agent1.repository_arn,
                                 ecr_repository_agent2.repository_arn,
-                                "*"
-                            ]
-                        )
+                                "*",
+                            ],
+                        ),
                     ]
                 )
-            }
+            },
         )
 
         # Lambda Custom Resource Role
-        custom_resource_role = iam.Role(self, "CustomResourceRole",
+        custom_resource_role = iam.Role(
+            self,
+            "CustomResourceRole",
             role_name=f"{self.stack_name}-custom-resource-role",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             managed_policies=[
-                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSLambdaBasicExecutionRole"
+                )
             ],
             inline_policies={
                 "CustomResourcePolicy": iam.PolicyDocument(
@@ -305,63 +338,80 @@ class MultiAgentStack(Stack):
                             actions=[
                                 "codebuild:StartBuild",
                                 "codebuild:BatchGetBuilds",
-                                "codebuild:BatchGetProjects"
+                                "codebuild:BatchGetProjects",
                             ],
-                            resources=["*"]  # Will be updated after CodeBuild projects are created
+                            resources=[
+                                "*"
+                            ],  # Will be updated after CodeBuild projects are created
                         )
                     ]
                 )
-            }
+            },
         )
         # Lambda Function for CodeBuild Trigger
-        build_trigger_lambda = lambda_.Function(self, "CodeBuildTriggerFunction",
+        build_trigger_lambda = lambda_.Function(
+            self,
+            "CodeBuildTriggerFunction",
             function_name=f"{self.stack_name}-codebuild-trigger",
             runtime=lambda_.Runtime.PYTHON_3_9,
             handler="build_trigger_lambda.handler",
-            code=lambda_.Code.from_asset(os.path.join(os.path.dirname(__file__), "infra_utils")),
+            code=lambda_.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "infra_utils")
+            ),
             timeout=Duration.minutes(15),
             role=custom_resource_role,
-            description="Triggers CodeBuild projects as CloudFormation custom resource"
+            description="Triggers CodeBuild projects as CloudFormation custom resource",
         )
         # Agent2 Build Project (build first as it's independent)
-        agent2_build_project = codebuild.Project(self, "Agent2ImageBuildProject",
+        agent2_build_project = codebuild.Project(
+            self,
+            "Agent2ImageBuildProject",
             project_name=f"{self.stack_name}-agent2-build",
             description=f"Build agent2 Docker image for {self.stack_name}",
             role=codebuild_role,
             environment=codebuild.BuildEnvironment(
                 build_image=codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
                 compute_type=codebuild.ComputeType.LARGE,
-                privileged=True
+                privileged=True,
             ),
             environment_variables={
-                "AWS_DEFAULT_REGION": codebuild.BuildEnvironmentVariable(value=self.region),
-                "AWS_ACCOUNT_ID": codebuild.BuildEnvironmentVariable(value=self.account),
-                "IMAGE_REPO_NAME": codebuild.BuildEnvironmentVariable(value=ecr_repository_agent2.repository_name),
-                "IMAGE_TAG": codebuild.BuildEnvironmentVariable(value=image_tag.value_as_string),
-                "STACK_NAME": codebuild.BuildEnvironmentVariable(value=self.stack_name)
+                "AWS_DEFAULT_REGION": codebuild.BuildEnvironmentVariable(
+                    value=self.region
+                ),
+                "AWS_ACCOUNT_ID": codebuild.BuildEnvironmentVariable(
+                    value=self.account
+                ),
+                "IMAGE_REPO_NAME": codebuild.BuildEnvironmentVariable(
+                    value=ecr_repository_agent2.repository_name
+                ),
+                "IMAGE_TAG": codebuild.BuildEnvironmentVariable(
+                    value=image_tag.value_as_string
+                ),
+                "STACK_NAME": codebuild.BuildEnvironmentVariable(value=self.stack_name),
             },
-            build_spec=codebuild.BuildSpec.from_object({
-                "version": "0.2",
-                "phases": {
-                    "pre_build": {
-                        "commands": [
-                            "echo Logging in to Amazon ECR...",
-                            "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
-                        ]
-                    },
-                    "build": {
-                        "commands": [
-                            "echo Build started on `date`",
-                            "echo Building the Docker image for agent2 ARM64...",
-                            # Create requirements.txt
-                            """cat > requirements.txt << 'EOF'
+            build_spec=codebuild.BuildSpec.from_object(
+                {
+                    "version": "0.2",
+                    "phases": {
+                        "pre_build": {
+                            "commands": [
+                                "echo Logging in to Amazon ECR...",
+                                "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com",
+                            ]
+                        },
+                        "build": {
+                            "commands": [
+                                "echo Build started on `date`",
+                                "echo Building the Docker image for agent2 ARM64...",
+                                # Create requirements.txt
+                                """cat > requirements.txt << 'EOF'
 strands-agents
 boto3>=1.40.0
 botocore>=1.40.0
 bedrock-agentcore
 EOF""",
-                            # Create agent2.py
-                            """cat > agent2.py << 'EOF'
+                                # Create agent2.py
+                                """cat > agent2.py << 'EOF'
 from strands import Agent
 import os
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
@@ -407,8 +457,8 @@ async def invoke(payload=None):
 if __name__ == "__main__":
     app.run()
 EOF""",
-                            # Create Dockerfile
-                            """cat > Dockerfile << 'EOF'
+                                # Create Dockerfile
+                                """cat > Dockerfile << 'EOF'
 FROM public.ecr.aws/docker/library/python:3.11-slim
 WORKDIR /app
 
@@ -427,61 +477,73 @@ COPY . .
 
 CMD ["opentelemetry-instrument", "python", "-m", "agent2"]
 EOF""",
-                            "echo Building ARM64 image...",
-                            "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .",
-                            "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG"
-                        ]
+                                "echo Building ARM64 image...",
+                                "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .",
+                                "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                            ]
+                        },
+                        "post_build": {
+                            "commands": [
+                                "echo Build completed on `date`",
+                                "echo Pushing the Docker image...",
+                                "docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                                "echo ARM64 Docker image pushed successfully",
+                            ]
+                        },
                     },
-                    "post_build": {
-                        "commands": [
-                            "echo Build completed on `date`",
-                            "echo Pushing the Docker image...",
-                            "docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
-                            "echo ARM64 Docker image pushed successfully"
-                        ]
-                    }
                 }
-            })
+            ),
         )
         # Agent1 Build Project (orchestrator that calls agent2)
-        agent1_build_project = codebuild.Project(self, "Agent1ImageBuildProject",
+        agent1_build_project = codebuild.Project(
+            self,
+            "Agent1ImageBuildProject",
             project_name=f"{self.stack_name}-agent1-build",
             description=f"Build agent1 Docker image for {self.stack_name}",
             role=codebuild_role,
             environment=codebuild.BuildEnvironment(
                 build_image=codebuild.LinuxArmBuildImage.AMAZON_LINUX_2_STANDARD_3_0,
                 compute_type=codebuild.ComputeType.LARGE,
-                privileged=True
+                privileged=True,
             ),
             environment_variables={
-                "AWS_DEFAULT_REGION": codebuild.BuildEnvironmentVariable(value=self.region),
-                "AWS_ACCOUNT_ID": codebuild.BuildEnvironmentVariable(value=self.account),
-                "IMAGE_REPO_NAME": codebuild.BuildEnvironmentVariable(value=ecr_repository_agent1.repository_name),
-                "IMAGE_TAG": codebuild.BuildEnvironmentVariable(value=image_tag.value_as_string),
-                "STACK_NAME": codebuild.BuildEnvironmentVariable(value=self.stack_name)
+                "AWS_DEFAULT_REGION": codebuild.BuildEnvironmentVariable(
+                    value=self.region
+                ),
+                "AWS_ACCOUNT_ID": codebuild.BuildEnvironmentVariable(
+                    value=self.account
+                ),
+                "IMAGE_REPO_NAME": codebuild.BuildEnvironmentVariable(
+                    value=ecr_repository_agent1.repository_name
+                ),
+                "IMAGE_TAG": codebuild.BuildEnvironmentVariable(
+                    value=image_tag.value_as_string
+                ),
+                "STACK_NAME": codebuild.BuildEnvironmentVariable(value=self.stack_name),
             },
-            build_spec=codebuild.BuildSpec.from_object({
-                "version": "0.2",
-                "phases": {
-                    "pre_build": {
-                        "commands": [
-                            "echo Logging in to Amazon ECR...",
-                            "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
-                        ]
-                    },
-                    "build": {
-                        "commands": [
-                            "echo Build started on `date`",
-                            "echo Building the Docker image for agent1 ARM64...",
-                            # Create requirements.txt
-                            """cat > requirements.txt << 'EOF'
+            build_spec=codebuild.BuildSpec.from_object(
+                {
+                    "version": "0.2",
+                    "phases": {
+                        "pre_build": {
+                            "commands": [
+                                "echo Logging in to Amazon ECR...",
+                                "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com",
+                            ]
+                        },
+                        "build": {
+                            "commands": [
+                                "echo Build started on `date`",
+                                "echo Building the Docker image for agent1 ARM64...",
+                                # Create requirements.txt
+                                """cat > requirements.txt << 'EOF'
 strands-agents
 boto3>=1.40.0
 botocore>=1.40.0
 bedrock-agentcore
 EOF""",
-                            # Create agent1.py - this is a large block, so I'll split it
-                            """cat > agent1.py << 'EOF'
+                                # Create agent1.py - this is a large block, so I'll split it
+                                """cat > agent1.py << 'EOF'
 from strands import Agent, tool
 from typing import Dict, Any
 import boto3
@@ -603,8 +665,8 @@ async def invoke(payload=None):
 if __name__ == "__main__":
     app.run()
 EOF""",
-                            # Create Dockerfile
-                            """cat > Dockerfile << 'EOF'
+                                # Create Dockerfile
+                                """cat > Dockerfile << 'EOF'
 FROM public.ecr.aws/docker/library/python:3.11-slim
 WORKDIR /app
 
@@ -623,45 +685,52 @@ COPY . .
 
 CMD ["opentelemetry-instrument", "python", "-m", "agent1"]
 EOF""",
-                            "echo Building ARM64 image...",
-                            "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .",
-                            "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG"
-                        ]
+                                "echo Building ARM64 image...",
+                                "docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG .",
+                                "docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                            ]
+                        },
+                        "post_build": {
+                            "commands": [
+                                "echo Build completed on `date`",
+                                "echo Pushing the Docker image...",
+                                "docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
+                                "echo ARM64 Docker image pushed successfully",
+                            ]
+                        },
                     },
-                    "post_build": {
-                        "commands": [
-                            "echo Build completed on `date`",
-                            "echo Pushing the Docker image...",
-                            "docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG",
-                            "echo ARM64 Docker image pushed successfully"
-                        ]
-                    }
                 }
-            })
+            ),
         )
         # Custom Resources to trigger builds
-        trigger_agent2_build = CustomResource(self, "TriggerAgent2ImageBuild",
+        trigger_agent2_build = CustomResource(
+            self,
+            "TriggerAgent2ImageBuild",
             service_token=build_trigger_lambda.function_arn,
             properties={
                 "ProjectName": agent2_build_project.project_name,
-                "WaitForCompletion": "true"
-            }
+                "WaitForCompletion": "true",
+            },
         )
         trigger_agent2_build.node.add_dependency(ecr_repository_agent2)
         trigger_agent2_build.node.add_dependency(agent2_build_project)
 
-        trigger_agent1_build = CustomResource(self, "TriggerAgent1ImageBuild",
+        trigger_agent1_build = CustomResource(
+            self,
+            "TriggerAgent1ImageBuild",
             service_token=build_trigger_lambda.function_arn,
             properties={
                 "ProjectName": agent1_build_project.project_name,
-                "WaitForCompletion": "true"
-            }
+                "WaitForCompletion": "true",
+            },
         )
         trigger_agent1_build.node.add_dependency(ecr_repository_agent1)
         trigger_agent1_build.node.add_dependency(agent1_build_project)
 
         # Agent2 Runtime (deploy first as agent1 depends on it)
-        agent2_runtime = bedrockagentcore.CfnRuntime(self, "Agent2Runtime",
+        agent2_runtime = bedrockagentcore.CfnRuntime(
+            self,
+            "Agent2Runtime",
             agent_runtime_name=f"{self.stack_name.replace('-', '_')}_{agent2_name.value_as_string}",
             agent_runtime_artifact=bedrockagentcore.CfnRuntime.AgentRuntimeArtifactProperty(
                 container_configuration=bedrockagentcore.CfnRuntime.ContainerConfigurationProperty(
@@ -672,12 +741,14 @@ EOF""",
             network_configuration=bedrockagentcore.CfnRuntime.NetworkConfigurationProperty(
                 network_mode=network_mode.value_as_string
             ),
-            description=f"Specialist agent runtime for {self.stack_name}"
+            description=f"Specialist agent runtime for {self.stack_name}",
         )
         agent2_runtime.node.add_dependency(trigger_agent2_build)
 
         # Agent1 Runtime (orchestrator with agent2 ARN as environment variable)
-        agent1_runtime = bedrockagentcore.CfnRuntime(self, "Agent1Runtime",
+        agent1_runtime = bedrockagentcore.CfnRuntime(
+            self,
+            "Agent1Runtime",
             agent_runtime_name=f"{self.stack_name.replace('-', '_')}_{agent1_name.value_as_string}",
             agent_runtime_artifact=bedrockagentcore.CfnRuntime.AgentRuntimeArtifactProperty(
                 container_configuration=bedrockagentcore.CfnRuntime.ContainerConfigurationProperty(
@@ -689,45 +760,55 @@ EOF""",
                 network_mode=network_mode.value_as_string
             ),
             description=f"Orchestrator agent runtime for {self.stack_name}",
-            environment_variables={
-                "AGENT2_ARN": agent2_runtime.attr_agent_runtime_arn
-            }
+            environment_variables={"AGENT2_ARN": agent2_runtime.attr_agent_runtime_arn},
         )
         agent1_runtime.node.add_dependency(trigger_agent1_build)
         agent1_runtime.node.add_dependency(agent2_runtime)
         # Outputs
-        CfnOutput(self, "Agent1RuntimeId",
+        CfnOutput(
+            self,
+            "Agent1RuntimeId",
             description="ID of agent1 (orchestrator) runtime",
             value=agent1_runtime.attr_agent_runtime_id,
-            export_name=f"{self.stack_name}-Agent1RuntimeId"
+            export_name=f"{self.stack_name}-Agent1RuntimeId",
         )
 
-        CfnOutput(self, "Agent1RuntimeArn",
+        CfnOutput(
+            self,
+            "Agent1RuntimeArn",
             description="ARN of agent1 (orchestrator) runtime",
             value=agent1_runtime.attr_agent_runtime_arn,
-            export_name=f"{self.stack_name}-Agent1RuntimeArn"
+            export_name=f"{self.stack_name}-Agent1RuntimeArn",
         )
 
-        CfnOutput(self, "Agent2RuntimeId",
+        CfnOutput(
+            self,
+            "Agent2RuntimeId",
             description="ID of agent2 (specialist) runtime",
             value=agent2_runtime.attr_agent_runtime_id,
-            export_name=f"{self.stack_name}-Agent2RuntimeId"
+            export_name=f"{self.stack_name}-Agent2RuntimeId",
         )
 
-        CfnOutput(self, "Agent2RuntimeArn",
+        CfnOutput(
+            self,
+            "Agent2RuntimeArn",
             description="ARN of agent2 (specialist) runtime",
             value=agent2_runtime.attr_agent_runtime_arn,
-            export_name=f"{self.stack_name}-Agent2RuntimeArn"
+            export_name=f"{self.stack_name}-Agent2RuntimeArn",
         )
 
-        CfnOutput(self, "Agent1ECRRepositoryUri",
+        CfnOutput(
+            self,
+            "Agent1ECRRepositoryUri",
             description="URI of the ECR repository for agent1",
             value=ecr_repository_agent1.repository_uri,
-            export_name=f"{self.stack_name}-Agent1ECRRepositoryUri"
+            export_name=f"{self.stack_name}-Agent1ECRRepositoryUri",
         )
 
-        CfnOutput(self, "Agent2ECRRepositoryUri",
+        CfnOutput(
+            self,
+            "Agent2ECRRepositoryUri",
             description="URI of the ECR repository for agent2",
             value=ecr_repository_agent2.repository_uri,
-            export_name=f"{self.stack_name}-Agent2ECRRepositoryUri"
+            export_name=f"{self.stack_name}-Agent2ECRRepositoryUri",
         )
