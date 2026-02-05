@@ -7,7 +7,6 @@ Retrieve API for RAG (Retrieval Augmented Generation).
 
 import os
 import logging
-from typing import Optional
 import boto3
 from strands.tools import tool
 
