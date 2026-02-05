@@ -4,89 +4,52 @@
  */
 
 /**
- * List of dangerous URL schemes that should be blocked
+ * HTML entity map for encoding special characters
  */
-const DANGEROUS_SCHEMES = [
-  'javascript:',
-  'vbscript:',
-  'data:',
-  'file:',
-];
+const HTML_ENTITIES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#x27;',
+  '/': '&#x2F;',
+  '`': '&#x60;',
+  '=': '&#x3D;',
+};
 
 /**
- * List of dangerous HTML tag names
- */
-const DANGEROUS_TAGS = [
-  'script',
-  'iframe',
-  'object',
-  'embed',
-  'applet',
-  'meta',
-  'link',
-  'style',
-  'form',
-  'input',
-  'button',
-  'textarea',
-  'select',
-  'base',
-];
-
-/**
- * Sanitize user input by removing potentially dangerous content
- * Uses a tag-stripping approach instead of regex for better security
+ * Sanitize user input by encoding HTML entities
+ * This is the safest approach - encode all potentially dangerous characters
+ * rather than trying to selectively remove them with regex
  * @param input - Raw user input string
  * @returns Sanitized string safe for display
  */
 export const sanitizeInput = (input: string): string => {
   if (!input) return '';
 
-  let sanitized = input;
+  // Encode HTML entities - this prevents XSS by making all HTML inert
+  let sanitized = input.replace(/[&<>"'`=/]/g, (char) => HTML_ENTITIES[char] || char);
 
-  // Remove dangerous URL schemes (case-insensitive, handles whitespace)
-  for (const scheme of DANGEROUS_SCHEMES) {
-    // Match scheme with optional whitespace between characters
-    const schemePattern = scheme
-      .split('')
-      .map(char => char === ':' ? '\\s*:' : `\\s*${char}`)
-      .join('');
-    const regex = new RegExp(schemePattern, 'gi');
-    
-    let previousLength: number;
-    do {
-      previousLength = sanitized.length;
-      sanitized = sanitized.replace(regex, '');
-    } while (sanitized.length !== previousLength);
-  }
+  // Remove control characters (non-printable)
+  sanitized = sanitized.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
 
-  // Remove dangerous HTML tags (handles spaces in closing tags like </script >)
-  for (const tag of DANGEROUS_TAGS) {
-    // Opening tags: <script, <script , <script/
-    const openTagRegex = new RegExp(`<\\s*${tag}\\b[^>]*>`, 'gi');
-    // Closing tags: </script>, </script >, < /script>
-    const closeTagRegex = new RegExp(`<\\s*/\\s*${tag}\\s*>`, 'gi');
-    
-    let previousLength: number;
-    do {
-      previousLength = sanitized.length;
-      sanitized = sanitized.replace(openTagRegex, '');
-      sanitized = sanitized.replace(closeTagRegex, '');
-    } while (sanitized.length !== previousLength);
-  }
+  return sanitized.trim();
+};
 
-  // Remove content between script tags (in case tags weren't properly closed)
-  let previousLength: number;
-  do {
-    previousLength = sanitized.length;
-    // Match script content more broadly
-    sanitized = sanitized.replace(/<\s*script[^>]*>[\s\S]*?<\s*\/\s*script\s*>/gi, '');
-    sanitized = sanitized.replace(/<\s*style[^>]*>[\s\S]*?<\s*\/\s*style\s*>/gi, '');
-  } while (sanitized.length !== previousLength);
+/**
+ * Sanitize input for plain text display (strips all HTML-like content)
+ * Use this when you want to completely remove any HTML rather than encode it
+ * @param input - Raw user input string
+ * @returns Plain text string with no HTML
+ */
+export const sanitizeToPlainText = (input: string): string => {
+  if (!input) return '';
 
-  // Remove on* event handlers (onclick, onerror, etc.)
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '');
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '');
+  // First encode entities, then strip anything that looks like a tag
+  let sanitized = sanitizeInput(input);
+
+  // Remove any remaining angle bracket sequences (already encoded)
+  sanitized = sanitized.replace(/&lt;[^&]*&gt;/gi, '');
 
   return sanitized.trim();
 };
