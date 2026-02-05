@@ -1,5 +1,5 @@
 {
-  "name": "bedrock-agentcore-template",
+  "name": "knowledge-base-rag-agent",
   "version": "1.0.0",
   "description": "A comprehensive AWS CDK template for deploying a Bedrock Agent with Knowledge Base and web interface",
   "type": "module",

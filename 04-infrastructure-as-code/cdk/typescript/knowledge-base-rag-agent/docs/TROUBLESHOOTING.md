@@ -16,10 +16,10 @@ cdk --version
 cdk ls
 
 # Check stack status
-aws cloudformation describe-stacks --query 'Stacks[?contains(StackName, `bedrock-agent`)].{Name:StackName,Status:StackStatus}' --output table
+aws cloudformation describe-stacks --query 'Stacks[?contains(StackName, `knowledge-base-rag`)].{Name:StackName,Status:StackStatus}' --output table
 
 # View recent CloudFormation events
-aws cloudformation describe-stack-events --stack-name bedrock-agentcore-template-api-dev --max-items 10
+aws cloudformation describe-stack-events --stack-name knowledge-base-rag-agent-api-dev --max-items 10
 ```
 
 ## Phase 1: Environment Preparation Issues
@@ -188,7 +188,7 @@ nano infrastructure/.env
 
 # Change these to unique values:
 COGNITO_DOMAIN_PREFIX=bedrock-agent-unique-12345
-PROJECT_NAME=bedrock-agentcore-template-unique
+PROJECT_NAME=knowledge-base-rag-agent-unique
 
 # Redeploy with new names
 ./scripts/deploy.sh dev
@@ -204,7 +204,7 @@ PROJECT_NAME=bedrock-agentcore-template-unique
 ```bash
 # Get ingestion job details
 KB_ID=$(aws cloudformation describe-stacks \
-  --stack-name bedrock-agentcore-template-bedrock-dev \
+  --stack-name knowledge-base-rag-agent-bedrock-dev \
   --query 'Stacks[0].Outputs[?OutputKey==`KnowledgeBaseId`].OutputValue' \
   --output text)
 
@@ -226,7 +226,7 @@ aws bedrock-agent list-ingestion-jobs --knowledge-base-id $KB_ID
 ```bash
 # Get bucket name
 BUCKET_NAME=$(aws cloudformation describe-stacks \
-  --stack-name bedrock-agentcore-template-bedrock-dev \
+  --stack-name knowledge-base-rag-agent-bedrock-dev \
   --query 'Stacks[0].Outputs[?OutputKey==`KnowledgeBaseBucket`].OutputValue' \
   --output text)
 
@@ -290,7 +290,7 @@ aws cloudfront list-distributions \
 
 # Check S3 bucket policy
 BUCKET_NAME=$(aws cloudformation describe-stacks \
-  --stack-name bedrock-agentcore-template-web-dev \
+  --stack-name knowledge-base-rag-agent-web-dev \
   --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucket`].OutputValue' \
   --output text)
 
@@ -305,7 +305,7 @@ aws s3api get-bucket-policy --bucket $BUCKET_NAME
 ```bash
 # Check Cognito User Pool configuration
 USER_POOL_ID=$(aws cloudformation describe-stacks \
-  --stack-name bedrock-agentcore-template-api-dev \
+  --stack-name knowledge-base-rag-agent-api-dev \
   --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' \
   --output text)
 
@@ -424,7 +424,7 @@ aws logs tail /aws/lambda/bedrock-agent-chat-dev --follow
 ```bash
 # Check stack events for errors
 aws cloudformation describe-stack-events \
-  --stack-name bedrock-agentcore-template-api-dev \
+  --stack-name knowledge-base-rag-agent-api-dev \
   --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`]'
 ```
 
@@ -444,7 +444,7 @@ cd infrastructure && npm run synth
 ```bash
 # Test API endpoints directly
 API_URL=$(aws cloudformation describe-stacks \
-  --stack-name bedrock-agentcore-template-api-dev \
+  --stack-name knowledge-base-rag-agent-api-dev \
   --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
   --output text)
 

@@ -51,7 +51,7 @@ This solution deploys a complete conversational AI system using Amazon Bedrock A
 
    ```bash
    git clone <repository-url>
-   cd bedrock-agentcore-template
+   cd knowledge-base-rag-agent
    
    # Check all prerequisites are installed
    ./scripts/check-prerequisites.sh
@@ -142,7 +142,7 @@ For detailed API examples, see [API Usage Guide](docs/API_USAGE.md).
 ## Project Structure
 
 ```
-bedrock-agentcore-template/
+knowledge-base-rag-agent/
 ├── README.md                    # This file
 ├── docs/                        # Documentation
 │   ├── knowledge-base-examples/ # Sample documents for testing

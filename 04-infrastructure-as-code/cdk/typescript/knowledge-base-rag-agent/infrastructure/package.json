@@ -1,7 +1,7 @@
 {
-  "name": "bedrock-agentcore-template-infrastructure",
+  "name": "knowledge-base-rag-agent-infrastructure",
   "version": "1.0.0",
-  "description": "CDK Infrastructure for Bedrock AgentCore Template",
+  "description": "CDK Infrastructure for Knowledge Base RAG Agent",
   "main": "bin/app.js",
   "scripts": {
     "build": "tsc",

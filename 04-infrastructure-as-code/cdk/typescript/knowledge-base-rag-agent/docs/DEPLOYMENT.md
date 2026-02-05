@@ -40,7 +40,7 @@ python3 --version
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd bedrock-agentcore-template
+cd knowledge-base-rag-agent
 
 # Install dependencies
 npm install

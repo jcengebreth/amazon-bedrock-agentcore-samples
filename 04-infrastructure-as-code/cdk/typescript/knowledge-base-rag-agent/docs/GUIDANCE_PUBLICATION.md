@@ -128,7 +128,7 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 ```bash
 # 1. Clone repository
 git clone <repository-url>
-cd bedrock-agentcore-template
+cd knowledge-base-rag-agent
 
 # 2. Install dependencies
 npm install
