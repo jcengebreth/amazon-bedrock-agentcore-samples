@@ -1,5 +1,5 @@
 """
-Bedrock AgentCore Template - Memory Manager
+Knowledge Base RAG Agent - Memory Manager
 
 This module provides memory management using AgentCore Memory service.
 Based on: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/memory-getting-started.html

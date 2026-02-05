@@ -1,5 +1,5 @@
 """
-Bedrock AgentCore Template - Main Entry Point
+Knowledge Base RAG Agent - Main Entry Point
 
 This module provides the entry point for the AgentCore Runtime.
 It wraps the Strands agent with BedrockAgentCoreApp for deployment.

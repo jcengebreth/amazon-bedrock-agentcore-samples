@@ -1,1 +1,1 @@
-# Bedrock AgentCore Template - Agent
+# Knowledge Base RAG Agent - Agent

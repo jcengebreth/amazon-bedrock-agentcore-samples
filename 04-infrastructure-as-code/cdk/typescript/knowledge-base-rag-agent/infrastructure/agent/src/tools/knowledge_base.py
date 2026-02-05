@@ -1,5 +1,5 @@
 """
-Bedrock AgentCore Template - Knowledge Base Tool
+Knowledge Base RAG Agent - Knowledge Base Tool
 
 This module provides a tool for searching the Bedrock Knowledge Base using the
 Retrieve API for RAG (Retrieval Augmented Generation).

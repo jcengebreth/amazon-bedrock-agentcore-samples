@@ -1,5 +1,5 @@
 """
-Bedrock AgentCore Template - Agent Definition
+Knowledge Base RAG Agent - Agent Definition
 
 This module defines the Strands agent with tools for RAG-based knowledge retrieval.
 """

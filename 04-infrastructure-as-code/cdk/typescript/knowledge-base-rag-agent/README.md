@@ -1,4 +1,4 @@
-# Bedrock AgentCore Template
+# Knowledge Base RAG Agent
 
 An AWS CDK template for deploying AI agents using Amazon Bedrock AgentCore with Knowledge Base integration and web interface. This template demonstrates production-ready patterns for building conversational AI applications.
 

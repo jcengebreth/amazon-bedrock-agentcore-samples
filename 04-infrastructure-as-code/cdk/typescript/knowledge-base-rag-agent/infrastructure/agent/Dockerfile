@@ -1,4 +1,4 @@
-# Bedrock AgentCore Template - Runtime Container
+# Knowledge Base RAG Agent - Runtime Container
 # Based on: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-getting-started-toolkit.html
 
 FROM python:3.13-slim

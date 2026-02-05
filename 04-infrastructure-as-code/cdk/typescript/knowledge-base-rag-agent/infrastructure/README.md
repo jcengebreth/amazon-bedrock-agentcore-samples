@@ -1,4 +1,4 @@
-# Bedrock AgentCore Template - Infrastructure
+# Knowledge Base RAG Agent - Infrastructure
 
 ## Overview
 

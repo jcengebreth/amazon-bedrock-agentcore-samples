@@ -1,7 +1,7 @@
 {
   "name": "bedrock-agent-lambda",
   "version": "1.0.0",
-  "description": "Lambda functions for Bedrock AgentCore Template",
+  "description": "Lambda functions for Knowledge Base RAG Agent",
   "main": "index.js",
   "scripts": {
     "build": "tsc",
